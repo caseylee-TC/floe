@@ -2,7 +2,7 @@
 title: "Relay fallback when a direct connection is impossible"
 sidebarTitle: "Relay fallback"
 description: "When a direct connection is impossible, Floe routes the transfer through an encrypted relay that cannot read it, capped at 2 GB per session."
-keywords: ["relay", "turn", "cgnat", "firewall", "why is my transfer slow", "amber"]
+keywords: ["relay", "turn", "cgnat", "firewall", "why is my transfer slow", "amber", "ports"]
 ---
 
 When two devices cannot reach each other directly, Floe routes the transfer through a
@@ -123,3 +123,25 @@ more: a [STUN](/glossary#stun) URL, a TURN URL over UDP, and a TURN URL over TLS
 last looks like ordinary HTTPS to a network that blocks everything else. Cloudflare offers more
 variants, but every extra URL multiplies the connectivity checks each client runs during setup, so
 the list is trimmed before it is served.
+
+## What a firewall has to allow {#what-a-firewall-has-to-allow}
+
+A firewall has to let a transfer on floe.one reach these addresses.
+
+| Address | Port | What it is for |
+| --- | --- | --- |
+| `floe.one` and `www.floe.one` | TCP 443 | The web app |
+| `api.floe.one` | TCP 443 | The signaling server, over HTTPS and [WebSocket](/glossary#websocket) |
+| `stun.cloudflare.com` | UDP 3478 | STUN, for a [direct connection](/glossary#direct-connection) |
+| `turn.cloudflare.com` | UDP 3478 and TCP 443 | The relay, over TLS on TCP 443 where UDP is blocked |
+
+The CLI and Floe Desktop use a WebSocket on `api.floe.one/ws`, so a proxy in the way has to allow
+the WebSocket upgrade. The web app can fall back to ordinary HTTPS requests.
+
+A direct connection normally sends UDP straight to the other device, on ports picked for each
+transfer. Where that is blocked, only the relay can carry the transfer.
+
+An app that cannot fetch its connection list from `api.floe.one` uses Google's public STUN servers
+on UDP 19302 instead. They, and the GitHub addresses that installs and updates reach, are listed
+under [Other services floe.one relies on](/security-privacy#other-services). A
+[self-hosted](/glossary#self-hosted) instance uses its own addresses.
